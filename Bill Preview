@@ -1,0 +1,625 @@
+SELECT ORG_ID, PDF_SERIAL_NUMBER, BILL_NO, BILL_DATE, OPERATING_UNIT, BILLING_CODE, TYPE_OF_SERVICE, 
+CONTRACT_TYPE, PRODUCT_TYPE, EQUIPMENT_TYPE, CHARGE_CODE, GROUP_CODE, REPLACE(REGEXP_REPLACE(CHARGE_DESCRIPTION, '[^a-zA-Z0-9_ -&;,]', ''), 'amp;', '') CHARGE_DESCRIPTION, 
+GL_CODE, QUANTITY, QTY_UOM, RATETYPE, RATE, RATE_UOM, AMOUNT, CURRENCY, VAT, VAT_AMOUNT, TOTAL, FUNCTIONAL_CURRENCY, CONVERTION_RATE, TOTAL_IN_FUNCTIONAL_CURRENCY, BILL_LINE_NO, BILL_LINE_TYPE,
+STORAGE_CALCULATION,CHARGE_BY,CHARGE_TYPE,KEY_ID,CONTRACT_CURRENCY, --> 28-05-24 
+CONTRACT_AMOUNT,CONTRACT_VAT --> 28-05-24 
+FROM 
+(
+SELECT
+    org_id,
+    PDF_SERIAL_NUMBER,
+    bill_no,
+    bill_date,
+    operating_unit, 
+    billing_code,
+    type_of_service,
+    contract_type,
+    product_type,
+    equipment_type,
+    charge_code,
+    group_code,
+    charge_description,
+    gl_code,	
+    quantity,
+    qty_uom,
+    ratetype,
+    rate,
+    rate_uom,
+    amount,
+    currency,
+    vat,
+    vat_amount,
+    total,
+    functional_currency,
+    convertion_rate,
+    contract_currency, --> 28-05-24 
+    CONTRACT_AMOUNT, --> 28-05-24
+    CONTRACT_VAT,
+
+--> 28-05-24 S    
+    (case when (currency != 'AED') then
+          (CASE WHEN (currency = 'USD') then
+                round((total*f_get_bill_convrate(bill_no)),2)
+                WHEN (currency = 'OMR') then 
+                  round((total*f_get_bill_convrate(bill_no)) 
+                  / --DIVIDED BY FOR OMAN BILLING 
+                  CASE WHEN bill_no LIKE '%OMN%' THEN f_get_bill_convrate(bill_no)
+                  ELSE 1
+                  END
+                  ,2)
+                ELSE
+                 round((total * (SELECT conversion_rate
+                                   FROM
+                                       gl_daily_rates@ERPPROD.tristar.com
+                                   WHERE 1 = 1
+                                   AND from_currency = currency
+                                   AND to_currency = 'AED'
+                                   AND conversion_date = bill_date
+                                   )), 2)
+                END)
+          else 
+            (case WHEN (contract_currency != currency and contract_currency != 'AED' and currency = 'AED') then 
+                  amount --round((total*f_get_bill_convrate(bill_no)),2)
+                  WHEN (contract_currency != currency and contract_currency = 'AED' and currency != 'AED') then 
+                  amount --round((total*f_get_bill_convrate(bill_no)),2)
+                  ELSE total
+            end)
+          end
+      )AS total_in_functional_currency,
+
+--> 28-05-24 E      
+
+    bill_line_no,
+    'DAY' bill_line_type,
+	NULL CHARGE_BY,
+	NULL CHARGE_TYPE,
+	NULL STORAGE_CALCULATION,
+	key_id	
+FROM
+    (
+        SELECT
+            org_id,
+            PDF_SERIAL_NUMBER,
+            bill_no,
+            bill_date,
+            operating_unit, 
+            billing_code,
+            type_of_service,
+            contract_type,
+            product_type,
+            equipment_type,
+            charge_code,
+            charge_description,
+            gl_code,			
+            group_code,
+            quantity,
+            qty_uom,
+            ratetype, 
+            rate,
+            rate_uom,
+            currency,
+            vat,
+            functional_currency,
+            convertion_rate,
+            bill_line_no,
+            contract_currency, --> 28-05-24
+            
+--> 28-04-24 S
+      
+         round(
+         (
+         (case when f_get_ratetype(bill_no,bill_line_no) = 'rate' then
+              (case when (currency = 'AED') then
+                  round((quantity*rate),2)
+              else
+                  round((quantity*rate),2)*f_get_bill_convrate(bill_no)
+              end)
+          else
+              (case when (currency = 'AED') then
+                  round(amount,2)
+              else
+                  round(amount*f_get_bill_convrate(bill_no),2)
+              end) 
+           end) * nvl(f_get_vat_calc(vat),0) / 100 )
+            / --DIVIDED BY FOR OMAN BILLING 
+            CASE WHEN bill_no LIKE '%OMN%' THEN f_get_bill_convrate(bill_no)
+            ELSE 1
+            END
+          ,2) AS CONTRACT_VAT,
+                    
+
+            (case when f_get_ratetype(bill_no,bill_line_no) = 'rate' then
+                (case when  contract_currency = 'AED' and currency != 'AED' then
+                     round(amount * f_get_bill_convrate(bill_no)/1,2)
+                  when (contract_currency != currency) then
+                    round(amount / f_get_bill_convrate(bill_no)/1,2)
+                    /*(SELECT conversion_rate
+                                FROM
+                                    gl_daily_rates@ERPPROD.tristar.com
+                                WHERE 1 = 1
+                                AND from_currency = contract_currency
+                                AND to_currency = currency
+                                AND conversion_date = bill_date)*/
+                   -- /1,2)
+                else
+                    round(quantity * rate , 2)
+                end)
+            else
+                (case 
+                when  contract_currency = 'AED' and currency != 'AED' then
+                     round(amount * f_get_bill_convrate(bill_no),2)
+                when (contract_currency != currency) then
+                    round(amount / f_get_bill_convrate(bill_no),2)
+                    /*(SELECT conversion_rate
+                                FROM
+                                    gl_daily_rates@ERPPROD.tristar.com
+                                WHERE 1 = 1
+                                AND from_currency = contract_currency
+                                AND to_currency = currency
+                                AND conversion_date = bill_date)*/
+                else
+                    round(quantity * rate , 2)
+                end) 
+            end) AS CONTRACT_AMOUNT,
+
+
+            (case when f_get_ratetype(bill_no,bill_line_no) = 'rate' then
+                (case when bill_currency != currency then
+                    round((quantity*rate)/f_get_bill_convrate(bill_no),2)
+                else
+                    round((quantity*rate),2)
+                end)
+            else
+                (case when (bill_currency != currency and f_get_bill_convrate(bill_no) > 0 ) then
+                    round(amount/f_get_bill_convrate(bill_no),2)
+                else
+                    round(amount,2)
+                end) 
+            end) AS amount,
+
+            round((
+             (case when f_get_ratetype(bill_no,bill_line_no) = 'rate' then
+                  (case when bill_currency != currency then
+                      round((quantity*rate)/f_get_bill_convrate(bill_no),2)
+                  else
+                      round((quantity*rate),2)
+                  end)
+               else
+                    (case when (bill_currency != currency and f_get_bill_convrate(bill_no) > 0 ) then
+                        round(amount/f_get_bill_convrate(bill_no),2)
+                    else
+                        round(amount,2)
+                    end) 
+                end)
+                * nvl(f_get_vat_calc(vat),0) / 100 )
+                ,2) 
+                AS vat_amount,
+            
+            round(
+            (case when f_get_ratetype(bill_no,bill_line_no) = 'rate' then
+                (case when (bill_currency != currency and f_get_bill_convrate(bill_no) > 0 ) then
+                    round((quantity*rate)/f_get_bill_convrate(bill_no),2)
+                else
+                    round((quantity*rate),2)
+                end)
+            else
+                (case when (bill_currency != currency and f_get_bill_convrate(bill_no) > 0 ) then
+                    round(amount/f_get_bill_convrate(bill_no),2)
+                else
+                    round(amount,2)
+                end) 
+            end)                
+            +
+            round((round((case when f_get_ratetype(bill_no,bill_line_no) = 'rate' then 
+                (case when bill_currency != currency then
+                    round((quantity*rate)/f_get_bill_convrate(bill_no),2)
+                else
+                    round((quantity*rate),2)
+                end)
+            else
+                (case when (bill_currency != currency and f_get_bill_convrate(bill_no) > 0 ) then
+                    round(amount/f_get_bill_convrate(bill_no),2)
+                else
+                    round(amount,2)
+                end) 
+            end),2) * nvl(f_get_vat_calc(vat),0) / 100 ),2) 
+            ,2)AS total,
+
+--> 28-04-24 E
+
+			key_id
+        FROM
+       ( SELECT
+            cbd.org_id,
+            cbd.PDF_SERIAL_NUMBER,
+            cbd.bill_no,
+            cb.bill_date, 
+            cb.operating_unit, 
+            cbd.billing_code,
+            cbd.type_of_service,
+            cbd.contract_type,
+            cbd.product_type,
+            cbd.equipment_type,		
+            max(cbd.charge_code) AS charge_code,
+            max(cbd.charge_description) AS charge_description,
+            max(cbd.gl_code) AS gl_code,			
+            cbd.group_code,            
+            case when SUM(nvl(cbd.quantity,0)) > f_get_contract_maxcapqty(max(source_id)) then
+                SUM(nvl(cbd.quantity,0)) - f_get_contract_maxcapqty(max(source_id))
+            else
+                SUM(nvl(cbd.quantity,0))
+            end AS quantity,            
+            SUM(nvl(cbd.amount,0)) amount,
+            cbd.qty_uom,
+            cbd.ratetype, 
+            cbd.rate,
+            cbd.rate_uom,
+
+--> 28-05-24 S
+            cb.contract_currency,
+            cbd.CURRENCY,
+--> 28-05-24 E
+            cbd.vat vat,
+            (
+                SELECT
+                    l.attribute1
+                FROM
+                    cbs_lookup l
+                WHERE
+                        attribute = 'CURRENCY'
+                    AND code = cb.operating_unit
+            ) AS functional_currency,
+            
+--> 28-05-24 S
+            (case when cbd.currency != 'AED' THEN f_get_bill_convrate(cbd.bill_no)--fx_rate_ship_to_func(cbd.bill_no)
+                when cbd.currency = 'AED' THEN null
+                else null end
+            ) AS convertion_rate,
+
+--> 28-05-24 E
+
+
+            max(cbd.bill_line_no) AS bill_line_no,
+            cbd.currency bill_currency,
+            cbd.key_id
+        FROM
+            cbs_bills_details_stg cbd,
+            cbs_bills_stg cb
+        WHERE
+            cbd.bill_no = cb.bill_no 
+            and exists (select 1 FROM cbs_bills_details_stg WHERE cbd.charge_by Not in ('Month','Year') and rownum = 1)
+            and cbd.ratetype = 'rate'
+        GROUP BY
+            cbd.org_id,
+            cbd.PDF_SERIAL_NUMBER,
+            cbd.bill_no,
+            cb.bill_date,
+            cb.operating_unit, 
+            cbd.billing_code,
+            cbd.type_of_service,
+            cbd.contract_type,
+            cbd.product_type,
+            cbd.equipment_type,
+            cbd.group_code,
+            cbd.vat,
+            cbd.qty_uom,
+            cbd.ratetype, 
+            cbd.rate,
+            cbd.rate_uom,
+            cbd.currency,
+            cb.contract_currency,
+            cbd.key_id,
+            cb.currency
+            )
+      ORDER BY CURRENCY,CONVERTION_RATE ASC
+    )
+    
+UNION ALL
+
+SELECT
+    org_id,
+    PDF_SERIAL_NUMBER,
+    bill_no,
+    bill_date,
+    operating_unit, 
+    billing_code,
+    type_of_service,
+    contract_type,
+    product_type,
+    equipment_type,
+    charge_code,
+    group_code,
+    charge_description,
+    gl_code,	
+    quantity,
+    qty_uom,
+    ratetype, 
+    rate,
+    rate_uom,
+    amount,
+    currency,
+    vat,
+    vat_amount,
+    total,
+    functional_currency,
+    convertion_rate,
+    contract_currency, --> 28-05-24
+    contract_amount, --> 28-05-24
+    CONTRACT_VAT,
+        
+--> 28-05-24 S    
+    (case when (currency != 'AED') then
+          (CASE WHEN (currency = 'USD') then 
+                round((total*(SELECT conversion_rate
+                                         FROM
+                                             gl_daily_rates@ERPPROD.tristar.com
+                                         WHERE 1 = 1
+                                         AND from_currency = currency
+                                         AND to_currency = 'AED'
+                                         AND conversion_date = bill_date
+                                         )),2)
+                                         
+                WHEN (currency = 'OMR') then 
+                  round((total*f_get_bill_convrate(bill_no)) 
+                  / --DIVIDED BY FOR OMAN BILLING 
+                  CASE WHEN bill_no LIKE '%OMN%' THEN f_get_bill_convrate(bill_no)
+                  ELSE 1
+                  END
+                  ,2)
+                ELSE
+                 (CASE WHEN currency = 'QAR' AND contract_currency = 'USD' THEN
+                 round((total * 
+                       ((SELECT conversion_rate
+                                         FROM
+                                             gl_daily_rates@ERPPROD.tristar.com
+                                         WHERE 1 = 1
+                                         AND from_currency = currency
+                                         AND to_currency = 'USD'
+                                         AND conversion_date = bill_date
+                                         )*(SELECT conversion_rate
+                                         FROM
+                                             gl_daily_rates@ERPPROD.tristar.com
+                                         WHERE 1 = 1
+                                         AND from_currency = 'USD'
+                                         AND to_currency = 'AED'
+                                         AND conversion_date = bill_date
+                                         ))
+                                         )
+                                         ,2)
+                  ELSE 
+                    round((total * 
+                       (SELECT conversion_rate
+                                         FROM
+                                             gl_daily_rates@ERPPROD.tristar.com
+                                         WHERE 1 = 1
+                                         AND from_currency = currency
+                                         AND to_currency = 'AED'
+                                         AND conversion_date = bill_date
+                                         ))
+                                         ,2)
+                  END)
+                END)
+          else 
+            (case WHEN (contract_currency != currency and contract_currency != 'AED' and currency = 'AED') then 
+                  total 
+                  WHEN (contract_currency != currency and contract_currency = 'AED' and currency != 'AED') then 
+                  total 
+                  ELSE total
+            end)
+          end
+      )AS total_in_functional_currency,
+
+--> 28-05-24 E      
+     
+    bill_line_no,
+    'DAY' bill_line_type,
+	NULL CHARGE_BY,
+	NULL CHARGE_TYPE,
+	NULL STORAGE_CALCULATION,
+	key_id	
+FROM
+    (
+        SELECT
+            org_id,
+            PDF_SERIAL_NUMBER,
+            bill_no,
+            bill_date,
+            operating_unit, 
+            billing_code,
+            type_of_service,
+            contract_type,
+            product_type,
+            equipment_type,
+            charge_code,
+            charge_description,
+            gl_code,			
+            group_code,
+            quantity,
+            qty_uom,
+            ratetype, 
+            rate,
+            rate_uom,
+            currency,
+            vat,
+            functional_currency,
+            convertion_rate,
+            bill_line_no,
+--> 28-05-2024 S
+
+      
+            round((round(
+            (case when (currency = 'AED') then
+                round(amount,2)
+            else
+                round(amount*f_get_bill_convrate(bill_no),2)
+            end) 
+            ,2) * nvl(f_get_vat_calc(vat),0) / 100 )
+            / --DIVIDED BY FOR OMAN BILLING 
+            CASE WHEN bill_no LIKE '%OMN%' THEN f_get_bill_convrate(bill_no)
+            ELSE 1
+            END
+            ,2) AS CONTRACT_VAT,
+
+
+            (case when  contract_currency = 'AED' and currency != 'AED' then
+                   round(amount * f_get_bill_convrate(bill_no),2)
+            when (contract_currency != currency) then
+                round(amount / f_get_bill_convrate(bill_no),2)
+--                amount*(SELECT conversion_rate
+--                                FROM
+--                                    gl_daily_rates@ERPPROD.tristar.com
+--                                WHERE 1 = 1
+--                                AND from_currency = currency 
+--                                AND to_currency = contract_currency
+--                                AND conversion_date = bill_date)
+--                
+            else
+                round(amount,2)
+            end) AS CONTRACT_AMOUNT,
+
+            
+            (case when (bill_currency != currency  and f_get_bill_convrate(bill_no) > 0 ) then
+                round(amount/f_get_bill_convrate(bill_no),2)
+            else
+                round(amount,2)
+            end) AS amount,
+
+            round((round(
+            (case when (bill_currency != currency and f_get_bill_convrate(bill_no) > 0 ) then
+                                round(amount/f_get_bill_convrate(bill_no),2)
+                            else
+                                round(amount,2)
+                            end) 
+             ,2) * nvl(f_get_vat_calc(vat),0) / 100 ),2) AS vat_amount,
+            
+            round(
+                (case when (bill_currency != currency and f_get_bill_convrate(bill_no) > 0 ) then
+                    round(amount/f_get_bill_convrate(bill_no),2)
+                else
+                    round(amount,2)
+                end)                          
+            +
+            round((round(
+                (case when (bill_currency != currency and f_get_bill_convrate(bill_no) > 0 ) then
+                    round(amount/f_get_bill_convrate(bill_no),2)
+                else
+                    round(amount,2)
+                end) 
+            ,2) * nvl(f_get_vat_calc(vat),0) / 100 ),2) 
+            ,2) AS total,
+
+--> 28-05-2024 E
+
+            key_id,
+            contract_currency --> 28-05-24
+        FROM
+       ( SELECT
+            cbd.org_id,
+            cbd.PDF_SERIAL_NUMBER,
+            cbd.bill_no,
+            cb.bill_date, 
+            cb.operating_unit, 
+            cbd.billing_code,
+            cbd.type_of_service,
+            cbd.contract_type,
+            cbd.product_type,
+            cbd.equipment_type,			
+            max(cbd.charge_code) AS charge_code,
+            max(cbd.charge_description) AS charge_description,
+            max(cbd.gl_code) AS gl_code,			
+            cbd.group_code,
+
+            case when SUM(nvl(cbd.quantity,0)) > f_get_contract_maxcapqty(max(source_id)) then
+                1 --SUM(nvl(cbd.quantity,0)) - f_get_contract_maxcapqty(max(source_id))
+            else
+                1 --SUM(nvl(cbd.quantity,0))
+            end AS quantity,
+            
+            SUM(nvl(cbd.amount,0)) amount,
+
+            cbd.qty_uom,
+            cbd.ratetype, 
+
+            (case when cbd.rate = 0 then SUM(nvl(cbd.amount,0)) else SUM(nvl(cbd.amount,0)) end) rate, --> 28-05-24
+            
+            cbd.rate_uom,
+            
+--> 28-05-24 S
+            cb.contract_currency contract_currency,
+            cbd.CURRENCY,
+--> 28-05-24 E           
+
+            cbd.vat vat,
+
+            (
+                SELECT
+                    l.attribute1
+                FROM
+                    cbs_lookup l
+                WHERE
+                        attribute = 'CURRENCY'
+                    AND code = cb.operating_unit
+            )                           AS functional_currency,
+
+--> 28-05-24 S
+            (case when cbd.currency != 'AED' THEN --f_get_bill_convrate(cbd.bill_no)
+                    (CASE when cb.CONTRACT_CURRENCY = 'USD' THEN
+                     (SELECT conversion_rate
+                                         FROM
+                                             gl_daily_rates@ERPPROD.tristar.com
+                                         WHERE 1 = 1
+                                         AND from_currency = 'USD'
+                                         AND to_currency = 'AED'
+                                         AND conversion_date = cb.bill_date
+                                         )              
+                     ELSE f_get_bill_convrate(cbd.bill_no)
+                    END)
+                  when (cb.contract_currency != cbd.currency) THEN f_get_bill_convrate(cbd.bill_no)
+                  when cbd.currency = 'AED' THEN null
+                else null end
+            ) AS convertion_rate,
+
+--> 28-05-24 E
+
+            max(cbd.bill_line_no) AS bill_line_no,
+            cbd.currency bill_currency,
+            cbd.key_id,
+            NULL AS CONTRACT_AMOUNT, --> 28-05-24
+            NULL AS CONTRACT_VAT
+        FROM
+            cbs_bills_details_stg cbd,
+            cbs_bills_stg cb
+        WHERE
+            cbd.bill_no = cb.bill_no 
+            and exists (select 1 FROM cbs_bills_details_stg WHERE cbd.charge_by Not in ('Month','Year') and rownum = 1)
+            and (case when cbd.charge_code ='MAX_KM_CHARGE' then nvl(cbd.total,0) else 1 end) > 0
+            and cbd.ratetype = 'actuals'
+            --and cbd.amount > 0
+        GROUP BY
+            cbd.org_id,
+            cbd.PDF_SERIAL_NUMBER,
+            cbd.bill_no,
+            cb.bill_date,
+            cb.operating_unit, 
+            cbd.billing_code,
+            cbd.type_of_service,
+            cbd.contract_type,
+            cbd.product_type,
+            cbd.equipment_type,
+            cbd.group_code,
+            cbd.vat,
+            cbd.qty_uom,
+            cbd.ratetype,
+            --(case when cbd.rate = 0 then 0 else 1 end),
+            cbd.rate_uom,
+            cbd.currency,
+            cb.contract_currency,
+            cbd.key_id,
+            cb.currency,
+            cbd.rate
+            )
+      ORDER BY CURRENCY,CONVERTION_RATE ASC
+    )
+)
+--WHERE BILL_NO = 'IND202503138'; 
+--'IND-20240802-830'
