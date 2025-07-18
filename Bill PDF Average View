@@ -1,0 +1,621 @@
+SELECT
+	bill_type, 
+    operating_unit,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    bill_heading,
+    customer_name,
+    bill_to_address,
+    address1, address2, address3, address4,
+    city,
+    (select TERRITORY_SHORT_NAME from FND_TERRITORIES_TL@erpprod.tristar.com where TERRITORY_CODE = country and language = 'US' and rownum =1) country,
+    REGISTRATION_NUMBER,
+    tax_reg_no,
+    ADDRESS,
+    COMPANY_NAME_HEADER,
+    HEADER_ADDRESS_LINE1,
+    HEADER_ADDRESS_LINE2,
+    FOOTER_LINE3,
+    FOOTER_LINE4,
+    FOOTER_LINE5,
+    FOOTER_LINE6,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    quantity,
+    qty_uom,
+    to_char(rate,'999,999,990.9990') rate,
+    rate_uom,
+    to_char(total,'999,999,990.90') total,
+    substr(vat,1,3) vat,
+    to_char(vat_amount,'999,999,990.90') vat_amount,
+    currency,
+    to_char(amount,'999,999,990.90') amount,
+    --equipment_type,
+    to_char(NET_AMOUNT,'999,999,990.90') NET_AMOUNT,
+    to_char(NET_VAT,'999,999,990.90') NET_VAT,
+    to_char(NET_TOTAL,'999,999,990.90') NET_TOTAL,
+   CASE
+        WHEN nvl(NET_TOTAL, 0) = 0     THEN
+            'Zero'
+        WHEN instr(NET_TOTAL, '.') > 0 THEN
+            to_char(TO_DATE(substr(NET_TOTAL,
+                                   1,
+                                   instr(NET_TOTAL, '.') - 1),
+        'J'),
+                    'Jsp')
+            || ' And '
+            || to_char(TO_DATE(substr(to_char(NET_TOTAL,'9999999.99'),
+                                      instr(to_char(NET_TOTAL,'9999999.99'), '.') + 1),
+        'J'),
+                       'Jsp')||' '||decode(CONTRACT_CURRENCY,'OMR','BAIZA','USD','CENTS','AED','FILS','FILS')||' Only'
+        ELSE
+            to_char(TO_DATE(NET_TOTAL, 'J'),
+                    'Jsp')||' Only'
+    END AS net_total_words,    
+    to_char(NET_AMOUNT,'999999990.90') NET_AMOUNT_CHART,
+    to_char(NET_VAT,'999999990.90') NET_VAT_CHART,
+    to_char(NET_TOTAL,'999999990.90') NET_TOTAL_CHART,    
+    case when (select count(1) from cbs_bills_stg cp where cp.bill_no = bp.bill_no and cp.currency != 'AED' and cp.contract_currency != 'AED') > 0 then
+        to_char(NET_AMOUNT*f_get_bill_aed_convrate(bp.bill_no),'999999990.90') 
+    else
+        to_char(NET_AMOUNT*CONV_RATE_DISP,'999999990.90')
+    end NET_AMOUNT_CNV,
+    case when (select count(1) from cbs_bills_stg cp where cp.bill_no = bp.bill_no and cp.currency != 'AED' and cp.contract_currency != 'AED') > 0 then
+        to_char(NET_VAT*f_get_bill_aed_convrate(bp.bill_no),'999999990.90') 
+    else
+        to_char(NET_VAT*CONV_RATE_DISP,'999999990.90')
+    end NET_VAT_CNV,
+    case when (select count(1) from cbs_bills_stg cp where cp.bill_no = bp.bill_no and cp.currency != 'AED' and cp.contract_currency != 'AED') > 0 then
+        to_char(NET_TOTAL*f_get_bill_aed_convrate(bp.bill_no),'999999990.90') 
+    else
+        to_char(NET_TOTAL*CONV_RATE_DISP,'999999990.90')
+    end NET_TOTAL_CNV,    
+    group_code,
+    attribute1,
+    attribute2, 
+    contract_currency,
+    CONV_RATE_DISP,
+    to_char(vat_amount,'999,999,990.90') vat_amount_disp,
+	f_get_carbon_emission(bill_no) carbon_emission,
+    case when (select count(1) from cbs_bills_stg cp where cp.bill_no = bp.bill_no and cp.currency != 'AED' and cp.contract_currency != 'AED') > 0 then
+        'AED'
+    else
+        (select currency from cbs_bills_stg cp where cp.bill_no = bp.bill_no)
+    end curr_disp
+FROM (	
+SELECT 
+	bill_type, 
+    operating_unit,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    bill_heading,
+    customer_name,
+    bill_to_address,
+    address1, address2, address3, address4,
+    city,
+    country,
+    REGISTRATION_NUMBER,
+    tax_reg_no,
+    ADDRESS,
+    COMPANY_NAME_HEADER,
+    HEADER_ADDRESS_LINE1,
+    HEADER_ADDRESS_LINE2,
+    FOOTER_LINE3,
+    FOOTER_LINE4,
+    FOOTER_LINE5,
+    FOOTER_LINE6,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    quantity,
+    qty_uom,
+    rate,
+    rate_uom,
+    total,
+    vat,
+    vat_amount,
+    currency,
+    amount,
+    --equipment_type,
+    round(SUM(amount) OVER (),2) AS NET_AMOUNT,
+    round(SUM(vat_amount) OVER (),2) AS NET_VAT,
+    round(SUM(total) OVER (),2) AS NET_TOTAL,       
+    group_code,
+    attribute1,
+    attribute2, 
+    contract_currency,
+	CONV_RATE_DISP
+FROM  (
+SELECT 
+	bill_type, 
+    operating_unit,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    bill_heading,
+    customer_name,
+    bill_to_address,
+    address1,
+    address2,
+    address3,
+    address4,    
+    city,
+    country,
+    REGISTRATION_NUMBER,
+    tax_reg_no,
+    ADDRESS,
+    COMPANY_NAME_HEADER,
+    HEADER_ADDRESS_LINE1,
+    HEADER_ADDRESS_LINE2,
+    FOOTER_LINE3,
+    FOOTER_LINE4,
+    FOOTER_LINE5,
+    FOOTER_LINE6,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    quantity,
+    qty_uom,
+    rate,
+    rate_uom,
+    total,
+    vat,
+    vat_amount,
+    currency,
+    amount,
+    --equipment_type,
+    round(SUM(amount) OVER (),2) AS NET_AMOUNT,
+    round(SUM(vat_amount) OVER (),2) AS NET_VAT,
+    round(SUM(total) OVER (),2) AS NET_TOTAL,
+    group_code,
+    attribute1,
+    attribute2,
+    contract_currency,
+	CONV_RATE_DISP
+FROM (    
+SELECT
+	bill_type, 
+    operating_unit,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    case when status like 'Draft%' then 'DRAFT - TAX INVOICE' else 'TAX INVOICE' end bill_heading,
+    customer_name,
+    bill_to_address,
+    address1,
+    address2,
+    address3,
+    address4,    
+    city,
+    country,
+    REGISTRATION_NUMBER,
+    (select TAX_REG_NO from CBS_LOOKUP_REG_NO where ou = operating_unit) tax_reg_no,
+    (select ADDRESS from CBS_LOOKUP_REG_NO where ou = operating_unit) ADDRESS,
+    (select COMPANY_NAME_HEADER from CBS_LOOKUP_REG_NO where ou = operating_unit) COMPANY_NAME_HEADER,
+    (select HEADER_ADDRESS_LINE1 from CBS_LOOKUP_REG_NO where ou = operating_unit) HEADER_ADDRESS_LINE1,
+    (select HEADER_ADDRESS_LINE2 from CBS_LOOKUP_REG_NO where ou = operating_unit) HEADER_ADDRESS_LINE2,
+    (select FOOTER_LINE3 from CBS_LOOKUP_REG_NO where ou = operating_unit) FOOTER_LINE3,
+    (select FOOTER_LINE4 from CBS_LOOKUP_REG_NO where ou = operating_unit) FOOTER_LINE4,
+    (select FOOTER_LINE5 from CBS_LOOKUP_REG_NO where ou = operating_unit) FOOTER_LINE5,
+    (select FOOTER_LINE6 from CBS_LOOKUP_REG_NO where ou = operating_unit) FOOTER_LINE6,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    nvl(SUM(quantity),0)   AS quantity,
+    nvl(qty_uom,'-') AS qty_uom,
+    nvl(rate,0) AS rate,
+    nvl(rate_uom,'-') rate_uom,
+    nvl(SUM(total),0)      AS total,
+    vat AS vat,
+    nvl(SUM(vat_amount),0) AS vat_amount,
+    currency,
+    SUM(amount)     AS amount,
+    --equipment_type,
+    group_code,
+    nvl(attribute1,'-') AS attribute1,
+    nvl(attribute2,'-') AS attribute2,
+    contract_currency,
+	--nvl((SELECT nvl(max(CONVERSION_RATE),1) FROM cbs_bills_details_stg cbd Where cbd.bill_no = bill.bill_no and nvl(CONVERSION_RATE,1) <> 1),1) CONV_RATE_DISP
+    f_get_bill_convrate(bill.bill_no) CONV_RATE_DISP
+FROM
+    (
+SELECT 
+BILL_TYPE, BILL_NO, PDF_SERIAL_NUMBER, BILL_DATE, STATUS, CUSTOMER_NAME, BILL_TO_ADDRESS, address1, address2, address3, address4,
+CITY, country, REGISTRATION_NUMBER, TAX_REG_NO, PERIOD, LPO_REF, DUE_DATE, EXCH_RATE, 
+CHARGE_DESCRIPTION, PRODUCT_TYPE, QUANTITY, QTY_UOM, RATE, RATE_UOM, amount+(case when amount > 0 then (amount*f_get_vat_calc(vat))/100 else 0 end) TOTAL, VAT, 
+case when amount > 0 then (amount*f_get_vat_calc(vat))/100 else 0 end VAT_AMOUNT, CURRENCY, 
+AMOUNT, 
+--EQUIPMENT_TYPE, 
+GROUP_CODE, 
+ATTRIBUTE1, ATTRIBUTE2, CONTRACT_CURRENCY, OPERATING_UNIT, SHIPMENT_ID, SOURCE_ID, CONTRACT_BILL_NO, INDEX_VALUE 
+FROM (
+SELECT 
+BILL_TYPE, BILL_NO, PDF_SERIAL_NUMBER, BILL_DATE, STATUS, CUSTOMER_NAME, BILL_TO_ADDRESS, address1, address2, address3, address4, CITY, country, REGISTRATION_NUMBER, TAX_REG_NO, PERIOD, LPO_REF, DUE_DATE, EXCH_RATE, 
+CHARGE_DESCRIPTION, PRODUCT_TYPE, QUANTITY, QTY_UOM, RATE, RATE_UOM, TOTAL, VAT, VAT_AMOUNT, CURRENCY, (QUANTITY * RATE) AMOUNT, 
+--EQUIPMENT_TYPE, 
+GROUP_CODE, 
+ATTRIBUTE1, ATTRIBUTE2, CONTRACT_CURRENCY, OPERATING_UNIT, SHIPMENT_ID, SOURCE_ID, CONTRACT_BILL_NO, INDEX_VALUE 
+FROM
+(
+SELECT 
+bl.BILL_TYPE, bl.BILL_NO, bl.PDF_SERIAL_NUMBER, bl.BILL_DATE, bl.STATUS, bl.CUSTOMER_NAME, bl.BILL_TO_ADDRESS, bl.address1, bl.address2, bl.address3, bl.address4, bl.CITY, bl.country, bl.REGISTRATION_NUMBER, bl.TAX_REG_NO, bl.PERIOD, 
+bl.LPO_REF, bl.DUE_DATE, bl.EXCH_RATE, bl.CHARGE_DESCRIPTION, bl.PRODUCT_TYPE, bl.QUANTITY, bl.QTY_UOM, 
+(CASE WHEN bl.CHARGE_TYPE = 'Slab Rate' THEN
+    (
+                SELECT
+                    s.base_rate
+                FROM
+                    cbs_contract_slabs_stg s
+                WHERE
+                    s.contract_bill_no = wl.contract_bill_no								
+                    AND s.base_index = wl.index_value
+                    --AND lower(s.product) = lower(tc.equipment_type)								
+                    AND 
+                    bl.quantity BETWEEN s.min_distance AND s.max_distnace
+                    AND ROWNUM = 1
+            )   
+ELSE
+    0
+END) RATE, 
+bl.RATE_UOM, bl.TOTAL, bl.VAT, bl.VAT_AMOUNT, 
+bl.CURRENCY, bl.AMOUNT, --bl.EQUIPMENT_TYPE, 
+bl.GROUP_CODE, bl.ATTRIBUTE1, bl.ATTRIBUTE2, bl.CONTRACT_CURRENCY, 
+bl.OPERATING_UNIT, bl.SHIPMENT_ID, bl.source_id, wl.contract_bill_no, wl.index_value
+FROM 
+(    SELECT BILL_TYPE, BILL_NO, PDF_SERIAL_NUMBER, BILL_DATE, STATUS, CUSTOMER_NAME, BILL_TO_ADDRESS, address1, address2, address3, address4, CITY, country, REGISTRATION_NUMBER, TAX_REG_NO, PERIOD, 
+	LPO_REF, DUE_DATE, EXCH_RATE, CHARGE_DESCRIPTION, PRODUCT_TYPE, 
+    case when STORAGE_CALCULATION = 'Average' then
+        case when charge_by = 'Month' then
+                case when SUM(quantity) > 0 then 
+                    SUM(quantity) / 30
+                else
+                    SUM(quantity)                    
+                end
+             when charge_by = 'Year' then
+                case when SUM(quantity) > 0 then 
+                    SUM(quantity) / 365
+                else
+                    SUM(quantity)                    
+                end
+        else
+            SUM(quantity)                    
+        end
+    else
+        SUM(quantity)
+    end QUANTITY, 
+    QTY_UOM, NULL RATE, MAX(RATE_UOM) RATE_UOM, NULL TOTAL, VAT, NULL VAT_AMOUNT, CURRENCY, NULL AMOUNT, 
+	--EQUIPMENT_TYPE, 
+    GROUP_CODE, ATTRIBUTE1, ATTRIBUTE2, CONTRACT_CURRENCY, OPERATING_UNIT, SHIPMENT_ID, CHARGE_TYPE, 
+    MAX(source_id) source_id FROM CBS_BILL_DETAILS_PDF_VIEW ss
+    WHERE --bill_no =:p0_bill_no
+    --and 
+    exists (select 1 FROM cbs_bills_details_stg cs WHERE cs.bill_no = ss.bill_no and cs.charge_by in ('Month','Year') and nvl(cs.charge_type,'-') = 'Slab Rate' and rownum = 1)
+    and ss.charge_by in ('Month','Year') and nvl(ss.charge_type,'-') = 'Slab Rate' 
+GROUP BY
+BILL_TYPE, BILL_NO, PDF_SERIAL_NUMBER, BILL_DATE, STATUS, CUSTOMER_NAME, BILL_TO_ADDRESS, address1, address2, address3, address4, CITY, country, REGISTRATION_NUMBER, TAX_REG_NO, PERIOD, 
+	LPO_REF, DUE_DATE, EXCH_RATE, CHARGE_DESCRIPTION, PRODUCT_TYPE, QTY_UOM, VAT, CURRENCY, 
+	--EQUIPMENT_TYPE, 
+    GROUP_CODE, ATTRIBUTE1, ATTRIBUTE2, CONTRACT_CURRENCY, OPERATING_UNIT, SHIPMENT_ID, STORAGE_CALCULATION, CHARGE_TYPE, CHARGE_BY) bl,
+    CBS_WAREHOUSE_CHARGES_STG wl
+WHERE wl.id  = bl.source_id ))
+    ) bill
+GROUP BY
+    bill_type,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    status,
+    customer_name,
+    bill_to_address,
+    address1, address2, address3, address4,
+    city,
+    country,
+    REGISTRATION_NUMBER,
+    tax_reg_no,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    qty_uom,
+    rate,
+    rate_uom,
+    vat,
+    substr(vat,1,3),
+    --equipment_type,
+    group_code,
+    attribute1,
+    attribute2,
+   -- net_amount,
+    --n_vat_amount,
+    currency,
+    --net_vat,
+    --net_total,
+    contract_currency,
+    operating_unit
+    having SUM(nvl(amount,0)) > 0 )
+UNION ALL
+SELECT 
+	bill_type, 
+    operating_unit,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    bill_heading,
+    customer_name,
+    bill_to_address,
+    address1, address2, address3, address4,
+    city,
+    country,
+    REGISTRATION_NUMBER,
+    tax_reg_no,
+    ADDRESS,
+    COMPANY_NAME_HEADER,
+    HEADER_ADDRESS_LINE1,
+    HEADER_ADDRESS_LINE2,
+    FOOTER_LINE3,
+    FOOTER_LINE4,
+    FOOTER_LINE5,
+    FOOTER_LINE6,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    quantity,
+    qty_uom,
+    rate,
+    rate_uom,
+    total,
+    vat,
+    vat_amount,
+    currency,
+    amount,
+    --equipment_type,
+    round(SUM(amount) OVER (),2) AS NET_AMOUNT,
+    round(SUM(vat_amount) OVER (),2) AS NET_VAT,
+    round(SUM(total) OVER (),2) AS NET_TOTAL,
+    group_code,
+    attribute1,
+    attribute2,
+    contract_currency,
+	CONV_RATE_DISP
+FROM (    
+SELECT
+	bill_type, 
+    operating_unit,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    case when status like 'Draft%' then 'DRAFT - TAX INVOICE' else 'TAX INVOICE' end bill_heading,
+    customer_name,
+    bill_to_address,
+    address1, address2, address3, address4,
+    city,
+    country,
+    REGISTRATION_NUMBER,
+    (select TAX_REG_NO from CBS_LOOKUP_REG_NO where ou = operating_unit) tax_reg_no,
+    (select ADDRESS from CBS_LOOKUP_REG_NO where ou = operating_unit) ADDRESS,
+    (select COMPANY_NAME_HEADER from CBS_LOOKUP_REG_NO where ou = operating_unit) COMPANY_NAME_HEADER,
+    (select HEADER_ADDRESS_LINE1 from CBS_LOOKUP_REG_NO where ou = operating_unit) HEADER_ADDRESS_LINE1,
+    (select HEADER_ADDRESS_LINE2 from CBS_LOOKUP_REG_NO where ou = operating_unit) HEADER_ADDRESS_LINE2,
+    (select FOOTER_LINE3 from CBS_LOOKUP_REG_NO where ou = operating_unit) FOOTER_LINE3,
+    (select FOOTER_LINE4 from CBS_LOOKUP_REG_NO where ou = operating_unit) FOOTER_LINE4,
+    (select FOOTER_LINE5 from CBS_LOOKUP_REG_NO where ou = operating_unit) FOOTER_LINE5,
+    (select FOOTER_LINE6 from CBS_LOOKUP_REG_NO where ou = operating_unit) FOOTER_LINE6,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    case when STORAGE_CALCULATION = 'Average' then
+        case when charge_by = 'Month' then
+                case when SUM(quantity) > 0 then 
+                    SUM(quantity) / 30
+                else
+                    SUM(quantity)                    
+                end
+             when charge_by = 'Year' then
+                case when SUM(quantity) > 0 then 
+                    SUM(quantity) / 365
+                else
+                    SUM(quantity)                    
+                end
+        else
+            SUM(quantity)                    
+        end
+    else
+        SUM(quantity)
+    end    AS quantity,
+    nvl(qty_uom,'-') AS qty_uom,
+    nvl(rate,0) AS rate,
+    nvl(rate_uom,'-') rate_uom,
+    case when STORAGE_CALCULATION = 'Average' then
+        (case when charge_by = 'Month' then
+                case when SUM(quantity) > 0 then 
+                    (SUM(quantity) / 30) * rate
+                else
+                    SUM(quantity) * rate
+                end
+             when charge_by = 'Year' then
+                case when SUM(quantity) > 0 then 
+                    (SUM(quantity) / 365) * rate
+                else
+                    SUM(quantity) * rate
+                end
+        else
+            SUM(quantity) * rate
+        end) + ((case when charge_by = 'Month' then
+                case when SUM(quantity) > 0 then 
+                    (SUM(quantity) / 30) * rate
+                else
+                    SUM(quantity) * rate
+                end
+             when charge_by = 'Year' then
+                case when SUM(quantity) > 0 then 
+                    (SUM(quantity) / 365) * rate
+                else
+                    SUM(quantity) * rate
+                end
+        else
+            SUM(quantity) * rate
+        end) * f_get_vat_calc(vat) / 100 )
+    else
+        SUM(total)
+    end       AS total,
+    vat AS vat,
+    ((case when STORAGE_CALCULATION = 'Average' then
+        case when charge_by = 'Month' then
+                case when SUM(quantity) > 0 then 
+                    (SUM(quantity) / 30) * rate
+                else
+                    SUM(quantity) * rate
+                end
+             when charge_by = 'Year' then
+                case when SUM(quantity) > 0 then 
+                    (SUM(quantity) / 365) * rate
+                else
+                    SUM(quantity) * rate
+                end
+        else
+            SUM(quantity) * rate                  
+        end
+    else
+        SUM(amount)
+    end) * f_get_vat_calc(vat) / 100 )  AS vat_amount,
+    currency,
+    case when STORAGE_CALCULATION = 'Average' then
+        case when charge_by = 'Month' then
+                case when SUM(quantity) > 0 then 
+                    (SUM(quantity) / 30) * rate
+                else
+                    SUM(quantity) * rate                   
+                end
+             when charge_by = 'Year' then
+                case when SUM(quantity) > 0 then 
+                    (SUM(quantity) / 365) * rate
+                else
+                    SUM(quantity) * rate                   
+                end
+        else
+            SUM(quantity) * rate                 
+        end
+    else
+        SUM(amount)
+    end      AS amount,
+    --equipment_type,
+    group_code,
+    nvl(attribute1,'-') AS attribute1,
+    nvl(attribute2,'-') AS attribute2,
+    contract_currency,
+	--nvl((SELECT nvl(max(CONVERSION_RATE),1) FROM cbs_bills_details_stg cbd Where cbd.bill_no = bill.bill_no and nvl(CONVERSION_RATE,1) <> 1),1) CONV_RATE_DISP
+    f_get_bill_convrate(bill.bill_no) CONV_RATE_DISP
+FROM
+    (SELECT BILL_TYPE, BILL_NO, PDF_SERIAL_NUMBER, BILL_DATE, STATUS, CUSTOMER_NAME, BILL_TO_ADDRESS, address1, address2, address3, address4, CITY, country, REGISTRATION_NUMBER, TAX_REG_NO, PERIOD, 
+	LPO_REF, DUE_DATE, EXCH_RATE, CHARGE_DESCRIPTION, PRODUCT_TYPE, QUANTITY, QTY_UOM, RATE, RATE_UOM, TOTAL, VAT, VAT_AMOUNT, CURRENCY, AMOUNT, 
+	--EQUIPMENT_TYPE, 
+    GROUP_CODE, ATTRIBUTE1, ATTRIBUTE2, CONTRACT_CURRENCY, OPERATING_UNIT, SHIPMENT_ID, STORAGE_CALCULATION, CHARGE_TYPE, CHARGE_BY 
+    FROM CBS_BILL_DETAILS_PDF_VIEW ss WHERE --bill_no =:p0_bill_no
+    --and 
+    exists (select 1 FROM cbs_bills_details_stg cs WHERE cs.bill_no = ss.bill_no and cs.charge_by in ('Month','Year') and nvl(cs.charge_type,'-') <> 'Slab Rate' and rownum = 1)
+    and ss.charge_by in ('Month','Year') and nvl(ss.charge_type,'-') <> 'Slab Rate' 
+    ) bill
+GROUP BY
+    bill_type,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    status,
+    customer_name,
+    bill_to_address,
+    address1, address2, address3, address4,
+    city,
+    country,
+    REGISTRATION_NUMBER,
+    tax_reg_no,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    qty_uom,
+    rate,
+    rate_uom,
+    vat,
+    substr(vat,1,3),
+    --equipment_type,
+    group_code,
+    attribute1,
+    attribute2,
+   -- net_amount,
+    --n_vat_amount,
+    currency,
+    --net_vat,
+    --net_total,
+    contract_currency,
+    operating_unit,
+    STORAGE_CALCULATION, CHARGE_TYPE, CHARGE_BY 
+    having SUM(nvl(amount,0)) > 0 )
+)
+GROUP BY
+	bill_type, 
+    operating_unit,
+    bill_no,
+    pdf_serial_number,
+    bill_date,
+    bill_heading,
+    customer_name,
+    bill_to_address,
+    address1, address2, address3, address4,
+    city,
+    country,
+    REGISTRATION_NUMBER,
+    tax_reg_no,
+    ADDRESS,
+    COMPANY_NAME_HEADER,
+    HEADER_ADDRESS_LINE1,
+    HEADER_ADDRESS_LINE2,
+    FOOTER_LINE3,
+    FOOTER_LINE4,
+    FOOTER_LINE5,
+    FOOTER_LINE6,
+    period,
+    lpo_ref,
+    due_date,
+    exch_rate,
+    charge_description,
+    product_type,
+    quantity,
+    qty_uom,
+    rate,
+    rate_uom,
+    total,
+    vat,
+    vat_amount,
+    currency,
+    amount,     
+    group_code,
+    attribute1,
+    attribute2, 
+    contract_currency,
+	CONV_RATE_DISP
+) bp
