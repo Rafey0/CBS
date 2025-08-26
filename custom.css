@@ -1,0 +1,505 @@
+/*#a7353a, #e55204, #166938, #000000*/
+
+
+/*Login Background*/
+.t-Login-container {
+  background-image: linear-gradient(to top right, #166938, #e55204);
+  
+}
+
+/*Login Logo*/
+.t-Login-logo{
+  background-image: linear-gradient(to top right, #166938, #e55204);
+}
+
+.t-Login-logo.fa{
+	color: snow;
+}
+
+/*Header*/
+.t-Header-branding{
+    background: #166938;
+	background-image: linear-gradient(to top left, #166938, #e55204);
+	color: snow;
+}
+.t-Header-controls{
+	color: snow;
+}
+
+/*Hero Region Icon*/
+.t-HeroRegion-icon{
+    background-image: linear-gradient(to top left, #166938, #e55204) !important;
+}
+
+/*Navigation Bar*/
+.t-TreeNav{
+    background-color: #166938;
+	background-image: linear-gradient(to top right, #166938, #e55204) !important;
+}
+
+.t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content.is-current, .t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content.is-current--top, .t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content.is-selected
+{
+	background-image: linear-gradient(to bottom right, #166938, #a7353a) !important;
+	color: snow;
+}
+
+.t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content .a-Icon, .t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content .fa, .t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content.is-current--top .a-Icon, .t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content.is-current--top .fa, .t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content.is-hover .a-Icon, .t-TreeNav .a-TreeView-node--topLevel .a-TreeView-content.is-hover .fa
+{
+	color: snow;
+}
+
+.a-TreeView-content.is-selected.is-current--top.is-hover
+{
+	color: snow;
+}
+
+.t-NavigationBar .t-Button
+{
+	font-weight: 400;
+    color: snow;
+    padding: 6px 10px;
+    margin-left: 10px;
+    background: none;
+    box-shadow: none;
+    transition: none;
+    border-color: transparent;
+}
+
+.t-Button.t-Button--headerTree
+{
+	color: snow;
+}
+
+.t-Button.t-Button--headerTree.is-active
+{
+	background-color: transparent !important;
+    color: snow !important;
+    border-width: 0 !important;
+}
+
+.t-Button t-Button--icon t-Button--header t-Button--headerTree is-active
+{
+	background-color: transparent !important;
+    color: snow !important;
+    border-width: 0 !important;
+}
+
+/*Navigation Tabs*/
+.t-NavTabs-item {
+    color: #fff;
+    border-color: #a7353a;
+    background-image: linear-gradient(to top left, #166938, #e55204) !important;
+}
+
+.t-NavTabs-item:hover {
+    color: #fff;
+    background: #166938;
+}
+
+.t-NavTabs-item:active{
+	color: #fff;
+    background: #166938;
+}	
+
+/* Interactive Reports Headings*/
+.a-IRR-header{
+    color: snow;
+    border: none;
+	background-image: linear-gradient(to top left, #166938, #e55204) !important;
+	box-shadow: none;
+	background-attachment:fixed;
+}
+
+/*
+.a-IRR-table .a-IRR-header:hover
+{
+    color: snow;
+    border: none;
+	background-image: linear-gradient(to top left, #166938, #e55204);
+}
+*/
+.a-IRR-headerLink{
+    color: snow;
+}
+
+/*Logo Text*/
+.apex-logo-text
+{
+	color: snow;
+}
+
+
+/*Interactive Grid Header & Icon*/
+.a-GV-header{
+    color: snow;
+    background-image: linear-gradient(to top left, #166938, #e55204) !important;
+    border: none;
+	background-attachment:fixed;
+}
+
+.a-GV-header .a-Button.a-Button--actions{
+    color: snow;
+	background-image: linear-gradient(to top left, #166938, #e55204) !important;
+}
+
+.a-GV-header .u-selector{
+    border-color: snow !important;
+}
+
+.a-GV-cell .u-selector:is-selected{
+	background-image: linear-gradient(to top left, #166938, #e55204) !important;
+	color: snow !important;
+}
+
+.a-GV-loadMoreButton
+{
+    border-radius: 5px;
+    color: SNOW;
+    background-image: linear-gradient(to top left, #166938, #e55204) !important;
+    cursor: pointer;
+
+}
+
+/*
+.a-GV-table tr:nth-child(even)  .a-GV-cell {
+
+    background-color: #F0F0F0 !important;
+
+}*/
+
+
+/* Default Buttons*/
+.a-Button.is-active, .a-Button.is-active:active, .a-Button.is-active:not(:active), .a-Button:active, .t-Button.is-active, .t-Button.is-active:active, .t-Button.is-active:not(:active), .t-Button:active, .ui-button.is-active, .ui-button.is-active:active, .ui-button.is-active:not(:active), .ui-button:active{
+	background-color: #166938 !important;
+	background: #166938 !important;
+	color: snow;
+}
+
+.t-Button:hover, .ui-button:hover{
+	box-shadow: none;
+    /*background-image: linear-gradient(to top left, #166938, #e55204) !important;*/
+    color: SNOW !important;
+    text-shadow: none;
+}
+
+
+.a-Button:hover{
+	box-shadow: none;
+    /*background: #166938 !important;*/
+    color: #166938 !important;
+    text-shadow: none;
+}
+
+/*Button Hot*/
+.t-Button--hot, .a-Button--hot, .ui-button--hot, .a-CardView-button--hot, .apex-button-group input:checked + label, .t-Form-fieldContainer--radioButtonGroup .apex-item-group--rc input:checked + label{
+    color: snow;
+	background-image: linear-gradient(to top left, #166938, #e55204) !important;
+	border: transparent;	
+}
+
+.a-Button--hot, .t-Button--hot:not(.t-Button--simple), body .ui-button.ui-button--hot, body .ui-state-default.ui-priority-primary{
+	color: snow;
+	background-image: linear-gradient(to top left, #166938, #e55204) !important;
+	border: transparent;	
+}
+
+.a-Button--hot:hover, .t-Button--hot:hover{
+	box-shadow: none;
+    background: #166938 !important;
+    color: snow !important;
+    text-shadow: none;
+
+}
+
+
+/*Faceted Search Headers*/
+.t-Report-wrap, .t-Report-report{
+     width: 100%;
+}
+
+.t-Report-colHead{
+    font-weight: 500;
+    font-family:sans-serif;
+    font-size:12px;
+    color: snow;
+    background-color: #166938;
+    border: none;
+}
+
+.t-Report-colHead a:link {
+  color: snow;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+.a-FS-addChart{
+    color: snow;
+    background-color: #166938;
+}
+
+
+.t-Report-paginationText a{
+     color: #0F4B55;
+     font-weight: 500;
+}
+
+.t-Report-paginationText a:hover{
+    color: snow;
+    background-color: #166938;
+    font-size: 120%;
+}
+
+.apex-item-checkbox .apex-item-option input:checked+label:after{
+    color: snow;
+    background-color: #166938;
+}
+
+/*All Region Header*/
+.t-Region-header{
+    background-image: linear-gradient(to top left, #166938, #e55204) !important;
+    color: snow;
+}
+/*Tabs in Form*/
+.t-Tabs-link{
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight:bold;
+    font-size: 16px;
+    font-style: normal;
+    color: #0F4B55;;
+}
+
+.t-Tabs-link:hover {
+  font-size: 100%;
+}
+
+/*All labels in Form*/
+.t-Form-label{
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/*  font-size: 12px;
+    font-style: normal;
+    color: black;
+*/
+    font-weight: bold;
+
+}
+
+/*Footer Button*/
+.t-Footer-topButton{
+    background-image: linear-gradient(to top left, #166938, #e55204) !important;
+    color: SNOW;
+	border: none;
+	border-radius: 3px;
+}
+
+
+/*All Region boxes shadows*/
+.boxshadow{
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+/*All Buttons in the App*/
+.t-Button{
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+/*Custom Button*/
+.btn{
+    background-color: #e55204;
+    color: SNOW;
+    border-radius: 0px;
+}
+
+/*POP-UP Dialog box*/
+.ui-dialog.ui-dialog--modern .ui-dialog-content{
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight:600;
+    font-size: 12px;
+    background-color: #166938;
+    color: snow;
+}
+
+/*Dashborad Cards*/
+.t-Card-body{
+    background-image: linear-gradient(to top left, #166938, #e55204) !important;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.t-Card{
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.t-Card-icon .t-Icon{
+	background-image: linear-gradient(to top left, #166938, #e55204) !important;
+}
+
+
+/*Feild Focus and Hover for all*/
+/*POP LOV*/
+.apex-item-text.apex-item-popup-lov{
+    margin-left:2px;
+    margin-right:2px;
+}
+.apex-item-pop-lov{
+    margin-left:2px;
+    margin-right:2px;
+}
+
+.apex-item-pop-lov:Hover {
+  box-shadow: 0 0 5pt 2pt #166938;
+  outline-width: 0px;
+  font-size: 100%;
+}
+
+.apex-item-pop-lov:focus {
+  box-shadow: 0 0 5pt 2pt #166938;
+  outline-width: 0px;
+  border-color: #166938;
+}
+
+/*Select List Field*/
+.apex-item-select
+{ 
+    margin-left: 2px;
+    margin-right: 2px;  
+
+}
+
+.apex-item-select:hover{
+  box-shadow: 0 0 5pt 0.5pt #166938;
+  font-size: 100%;
+}
+
+.apex-item-select:focus {
+  box-shadow: 0 0 5pt 0.5pt #166938;
+  outline-width: 0px;
+  border-color: #166938;;
+}
+
+/*Text Item Field*/
+.apex-item-text{
+    margin-left: 2px;
+    margin-right: 2px;
+
+}
+
+.apex-item-text:hover {
+  box-shadow: 0 0 5pt 0.5pt #166938;
+  font-size: 100%;
+}
+
+.apex-item-text:focus {
+  box-shadow: 0 0 5pt 0.5pt #166938;
+  outline-width: 0px;
+  border-color: #166938;
+}
+
+/*Number Field*/
+.apex-item-number{
+    margin-left: 2px;
+    margin-right: 2px;
+
+}
+
+.apex-item-number:hover {
+  box-shadow: 0 0 5pt 0.5pt #166938;
+  font-size: 100%;
+}
+
+.apex-item-number:focus {
+  box-shadow: 0 0 5pt 2pt #166938;
+  outline-width: 0px;
+  border-color: #166938;
+}
+
+/*Text Area*/
+.apex-item-textarea{
+    font-size: 12px;
+}
+
+.apex-item-textarea:hover {
+  box-shadow: 0 0 5pt 0.5pt #166938;
+  font-size: 100%;
+}
+
+.apex-item-textarea:focus{
+  box-shadow: 0 0 5pt 2pt #166938;
+}
+
+/*Single Checkbox*/
+.apex-item-single-checkbox{
+    font-size: 8px;
+}
+
+.u-checkbox::after{
+    background: #e55204;
+    color: snow !important;
+}
+.a-checkbox-background-color{
+    background: #e55204;
+    color: snow;
+}
+
+/*Date Field*/
+.oj-text-field-container:hover {
+  box-shadow: 0 0 5pt 0.5pt #166938;
+  font-size: 100%;
+}
+
+.oj-text-field-container:focus{
+  box-shadow: 0 0 5pt 2pt #166938;
+}
+
+.apex-item-wrapper--date-picker-jet .oj-text-field-input{
+    margin-left:2px;
+    margin-right:2px;
+
+}
+
+/*Calender Date Picker*/
+.oj-datepicker-calendar td.oj-datepicker-today a{
+    border-color: #166938;
+    border-radius: 10%;
+}
+
+.oj-datepicker-calendar td a.oj-hover, .oj-datepicker-calendar td.oj-datepicker-today a.oj-hover{
+    background-color: transparent;
+    font-size: 100%;
+}
+
+.oj-datepicker-calendar td a.oj-selected, .oj-datepicker-calendar td.oj-datepicker-today a.oj-selected{
+    background-color: #166938;
+    color: snow;
+    border-radius: 10%;
+    font-weight: 500;
+}
+
+body .ui-datepicker td a.ui-state-default.ui-state-highlight, body .ui-datepicker td span.ui-state-default.ui-state-highlight{
+	background-image: linear-gradient(to top left, #166938, #e55204) !important;
+	color: SNOW !important;
+	border-radius: 10%;
+}
+
+/*Display as a link*/
+.a-FS-toggleOverflow{
+    color:#e55204;
+    font-weight: 500;
+}
+
+.t-Button--link .t-Icon, .t-Button--link.t-Button{
+    color:#e55204;
+}
+
+/*Image*/
+.u-tR img {
+    width: 50px !important; 
+}
+.u-tR img:hover {    
+    width: 100px !important; 
+}
+
+.boxcolor {
+  background-image: linear-gradient(to top right, #166938, #e55204);
+  
+}
